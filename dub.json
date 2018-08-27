@@ -19,5 +19,6 @@
                 "unit-threaded": "~>0.7.51"
             }
         }
-    ]
+    ],
+    "dflags": ["-dip25"]
 }
