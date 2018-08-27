@@ -1,5 +1,5 @@
 /** Manages database table abstractions. */
-module orminary.core.table;
+module orminary.core.table; @safe:
 
 import std.json : JSONValue;
 
