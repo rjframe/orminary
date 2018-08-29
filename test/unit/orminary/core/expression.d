@@ -6,7 +6,13 @@ import orminary.core.expression;
 unittest {
     auto s = Select("id", "name").from("mytable").where("id > 10");
 
-    import std.stdio;writeln(s);
+    assert(s.fields == ["id", "name"]);
+    assert(s.isDistinct == false);
+    assert(s.tables == ["mytable"]);
+    assert(s.filter == "id > 10");
+
+    s = Select("id", "name").distinct().from("mytable").where("id > 10");
+    assert(s.isDistinct == true);
 }
 
 @("Pass table objects to the SELECT query")
@@ -14,17 +20,30 @@ unittest {
     import orminary.core.table;
 
     @Table()
-    struct T {
-        Integer!() a;
-    }
+    struct T { Integer!() a; }
 
     @Table("other_name")
-    struct U {
-        Integer!() a;
-    }
+    struct U { Integer!() a; }
 
     auto t = T();
     auto u = U();
     auto s = Select("a").from(t, u);
-    import std.stdio;writeln(s);
+
+    assert(s.tables == ["T", "other_name"]);
 }
+
+@("Pass table types to the SELECT query")
+unittest {
+    import orminary.core.table;
+
+    @Table()
+    struct T { Integer!() a; }
+
+    @Table("other_name")
+    struct U { Integer!() a; }
+
+    auto s = Select("a").from!(T, U);
+
+    assert(s.tables == ["T", "other_name"]);
+}
+
