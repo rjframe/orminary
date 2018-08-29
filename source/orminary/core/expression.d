@@ -8,21 +8,25 @@ struct Select {
     }
 
     @property
-    string[] fields() { return _fields; }
+    string[] fields() pure { return _fields; }
 
     @property
-    string[] tables() { return _tables; }
+    string[] tables() pure { return _tables; }
 
     @property
-    string filter() { return _filter; }
+    string filter() pure { return _filter; }
 
     @property
-    bool isDistinct() { return _distinct; }
+    string[] groups() pure { return _groups; }
+
+    @property
+    bool isDistinct() pure { return _distinct; }
 
     private:
 
     string[] _fields;
     string[] _tables;
+    string[] _groups;
     string _filter;
     bool _distinct = false;
 }
@@ -73,6 +77,11 @@ Select from(T...)(Select s) pure {
 
 Select where(Select s, string filter) pure {
     s._filter = filter;
+    return s;
+}
+
+Select groupBy(Select s, string[] groups...) {
+    s._groups = groups;
     return s;
 }
 

@@ -1,5 +1,6 @@
 module unit.orminary.core.expression;
 
+import orminary.core.table;
 import orminary.core.expression;
 
 @("Construct a simple SELECT object")
@@ -17,13 +18,9 @@ unittest {
 
 @("Pass table objects to the SELECT query")
 unittest {
-    import orminary.core.table;
+    @Table() struct T { Integer!() a; }
 
-    @Table()
-    struct T { Integer!() a; }
-
-    @Table("other_name")
-    struct U { Integer!() a; }
+    @Table("other_name") struct U { Integer!() a; }
 
     auto t = T();
     auto u = U();
@@ -34,16 +31,17 @@ unittest {
 
 @("Pass table types to the SELECT query")
 unittest {
-    import orminary.core.table;
-
-    @Table()
-    struct T { Integer!() a; }
-
-    @Table("other_name")
-    struct U { Integer!() a; }
+    @Table() struct T { Integer!() a; }
+    @Table("other_name") struct U { Integer!() a; }
 
     auto s = Select("a").from!(T, U);
-
     assert(s.tables == ["T", "other_name"]);
 }
 
+@("Add a GROUP By clause")
+unittest {
+    @Table() struct T { Integer!() a; String!() b; }
+
+    auto s = Select("a", "b").from!T.groupBy("b", "a");
+    assert(s.groups() == ["b", "a"]);
+}
