@@ -3,24 +3,28 @@ module orminary.core.expression; @safe:
 
 struct Select {
     // TODO: distinct - flag.
-    this(string[] cols ...) {
+    this(const(string[]) cols ...) {
         _fields = cols.dup;
     }
 
     @property
-    string[] fields() pure { return _fields; }
+    const(string[]) fields() pure const { return _fields; }
 
     @property
-    string[] tables() pure { return _tables; }
+    const(string[]) tables() pure const { return _tables; }
 
     @property
-    string filter() pure { return _filter; }
+    const(string) filter() pure const { return _filter; }
 
     @property
-    string[] groups() pure { return _groups; }
+    const(string[]) groups() pure const { return _groups; }
 
     @property
-    bool isDistinct() pure { return _distinct; }
+    const(bool) isDistinct() pure const { return _distinct; }
+
+    // HAVING parameter.
+    @property
+    const(string) aggregateFilter() pure const { return _aggregateFilter; }
 
     private:
 
@@ -28,6 +32,7 @@ struct Select {
     string[] _tables;
     string[] _groups;
     string _filter;
+    string _aggregateFilter;
     bool _distinct = false;
 }
 
@@ -36,12 +41,12 @@ Select distinct(Select s) pure {
     return s;
 }
 
-Select from(Select s, string[] tables ...) pure {
-    s._tables = tables;
+Select from(Select s, const(string[]) tables ...) pure {
+    s._tables = tables.dup;
     return s;
 }
 
-Select from(T...)(Select s, T tables) pure {
+Select from(T...)(Select s, const(T) tables) pure {
     import std.traits : hasUDA, getUDAs;
     import orminary.core.table : Table;
 
@@ -75,13 +80,18 @@ Select from(T...)(Select s) pure {
     return s;
 }
 
-Select where(Select s, string filter) pure {
+Select where(Select s, const(string) filter) pure {
     s._filter = filter;
     return s;
 }
 
-Select groupBy(Select s, string[] groups...) {
-    s._groups = groups;
+Select groupBy(Select s, const(string[]) groups...) {
+    s._groups = groups.dup;
+    return s;
+}
+
+Select having(Select s, const(string) aggregateFilter) pure {
+    s._aggregateFilter = aggregateFilter;
     return s;
 }
 

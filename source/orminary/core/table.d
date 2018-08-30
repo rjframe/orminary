@@ -17,7 +17,7 @@ enum VarChar = -1;
 struct String(int length = VarChar, bool function(string) constraint = null) {
     private string val;
 
-    void opAssign(string newValue) {
+    void opAssign(const(char[]) newValue) {
         static if (length != VarChar) {
             if (newValue.length > length)
                 throw new Exception("TODO - invalid value");
@@ -27,14 +27,14 @@ struct String(int length = VarChar, bool function(string) constraint = null) {
                 throw new Exception("TODO - invalid value");
         }
 
-        val = newValue;
+        val = newValue.dup;
     }
 
-    bool opEquals()(auto ref const typeof(this) other) {
+    bool opEquals()(auto ref const(typeof(this)) other) {
         return val == other.val;
     }
 
-    bool opEquals()(auto ref const string other) {
+    bool opEquals()(auto ref const(string) other) {
         return val == other;
     }
 }
@@ -70,7 +70,7 @@ string GenerateOrmType(string name, string type) {
         "struct " ~ name ~ "(bool function(" ~ type ~ ") constraint = null) {"
         ~ "    private " ~ type ~ " val;"
 
-        ~ "    void opAssign(" ~ type ~ " newValue) {"
+        ~ "    void opAssign(const(" ~ type ~ ") newValue) {"
         ~ "        static if (constraint !is null) {"
         ~ "            if (! constraint(newValue))"
         ~ "                throw new Exception(`TODO - invalid value`);"
@@ -78,11 +78,11 @@ string GenerateOrmType(string name, string type) {
         ~ "        val = newValue;"
         ~ "    }"
 
-        ~ "    bool opEquals()(auto ref const typeof(this) other) {"
+        ~ "    bool opEquals()(auto ref const(typeof(this)) other) {"
         ~ "        return val == other.val;"
         ~ "    }"
 
-        ~ "    bool opEquals()(auto ref const " ~ type ~ " other) {"
+        ~ "    bool opEquals()(auto ref const(" ~ type ~ ") other) {"
         ~ "        return val == other;"
         ~ "    }"
         ~ "}";

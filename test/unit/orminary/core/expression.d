@@ -45,3 +45,11 @@ unittest {
     auto s = Select("a", "b").from!T.groupBy("b", "a");
     assert(s.groups() == ["b", "a"]);
 }
+
+@("Add a HAVING clause")
+unittest {
+    @Table() struct T { Integer!() a; String!() b; }
+
+    auto s = Select("a", "b").from!T.groupBy("b", "a").having("SUM(a) > 1");
+    assert(s.aggregateFilter() == "SUM(a) > 1");
+}
