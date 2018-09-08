@@ -43,33 +43,33 @@ Select distinct(Select s) pure {
     return s;
 }
 
-Select from(Select s, const(string[]) tables ...) pure {
+Select from(Select s, const(string[]) tables...) pure {
     s._tables = tables.dup;
     return s;
 }
 
 Select from(T...)(Select s, const(T) tables) pure {
     import std.traits : hasUDA;
-    import orminary.core.table : Table;
+    import orminary.core.model : Model;
 
     static foreach (table; tables) {{
-        static if (! hasUDA!(typeof(table), Table))
+        static if (! hasUDA!(typeof(table), Model))
             throw new Exception("TODO - incorrect object");
 
-        s._tables ~= Table.name!table;
+        s._tables ~= Model.name!table;
     }}
     return s;
 }
 
 Select from(T...)(Select s) pure {
     import std.traits : hasUDA;
-    import orminary.core.table : Table;
+    import orminary.core.model : Model;
 
     static foreach(table; T) {{
-        static if (! hasUDA!(table, Table))
+        static if (! hasUDA!(table, Model))
             throw new Exception("TODO - incorrect object");
 
-        s._tables ~= Table.name!table;
+        s._tables ~= Model.name!table;
     }}
     return s;
 }

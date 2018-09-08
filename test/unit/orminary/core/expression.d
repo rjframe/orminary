@@ -2,7 +2,7 @@ module unit.orminary.core.expression;
 
 import std.conv : text;
 
-import orminary.core.table;
+import orminary.core.model;
 import orminary.core.expression;
 
 @("Construct a simple SELECT object")
@@ -20,9 +20,9 @@ unittest {
 
 @("Pass table objects to the SELECT query")
 unittest {
-    @Table struct T { Integer!() a; }
+    @Model struct T { Integer!() a; }
 
-    @Table("other_name") struct U { Integer!() a; }
+    @Model("other_name") struct U { Integer!() a; }
 
     auto t = T();
     auto u = U();
@@ -33,8 +33,8 @@ unittest {
 
 @("Pass table types to the SELECT query")
 unittest {
-    @Table struct T { Integer!() a; }
-    @Table("other_name") struct U { Integer!() a; }
+    @Model struct T { Integer!() a; }
+    @Model("other_name") struct U { Integer!() a; }
 
     auto s = Select("a").from!(T, U);
     assert(s.tables == ["T", "other_name"], s.tables.text);
@@ -42,7 +42,7 @@ unittest {
 
 @("Add a GROUP By clause")
 unittest {
-    @Table struct T { Integer!() a; String!() b; }
+    @Model struct T { Integer!() a; String!() b; }
 
     auto s = Select("a", "b").from!T.groupBy("b", "a");
     assert(s.groups() == ["b", "a"]);
@@ -50,7 +50,7 @@ unittest {
 
 @("Add a HAVING clause")
 unittest {
-    @Table struct T { Integer!() a; String!() b; }
+    @Model struct T { Integer!() a; String!() b; }
 
     auto s = Select("a", "b").from!T.groupBy("b", "a").having("SUM(a) > 1");
     assert(s.aggregateFilter() == "SUM(a) > 1");

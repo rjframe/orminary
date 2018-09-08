@@ -1,7 +1,7 @@
-module unit.orminary.core.table;
+module unit.orminary.core.model;
 
 import std.exception : assertThrown;
-import orminary.core.table;
+import orminary.core.model;
 
 @("Construct and assign ORM values")
 unittest {
