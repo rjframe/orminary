@@ -90,7 +90,7 @@ struct Serialize(T, serializeAs format) {
 
 string GenerateOrmType(string name, string type) {
     return
-        "struct " ~ name ~ "(bool function(" ~ type ~ ") constraint = null) {"
+        "struct " ~ name ~ "(bool function(" ~ type ~ ") @safe constraint = null) {"
         ~ "    private " ~ type ~ " val;"
 
         ~ "    void opAssign(const(" ~ type ~ ") newValue) {"

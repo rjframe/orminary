@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/rjframe/orminary.svg?branch=master)](https://travis-ci.org/rjframe/orminary) [![codecov](https://codecov.io/gh/rjframe/orminary/branch/master/graph/badge.svg)](https://codecov.io/gh/rjframe/orminary)
+
 # Orminary
 
 ORM for D inspired by (but not really based on) SqlAchemy.
