@@ -1,14 +1,38 @@
 /** Manages database table abstractions. */
 module orminary.core.table; @safe:
 
+// TODO: Better module/filename than table. Possibly types?
+
 import std.json : JSONValue;
 
+import orminary.core.trace;
 // TODO: Everything is Unicode; do I also want to support ASCII types?
+// I probably should.
 
-
-/** UDA to specify that an object is a model/table row. */
+/** UDA to specify that an object is a model/table. */
 struct Table {
-    string name;
+    private string _name = "";
+
+    @property
+    void name(string name) { _name = name; }
+
+    // TODO: Sanitize/transform name.
+    static string name(alias table)() {
+        import std.traits : getUDAs, isType, isExpressionTuple;
+        import orminary.core.table : Table;
+
+        /* If the attribute is applied like "@Table struct t {}" then we end up
+           with the UDA type itself, rather than an instance of it. */
+        static if (isType!table)
+            alias tableType = table;
+         else
+            alias tableType = typeof(table);
+
+        static if (isExpressionTuple!(getUDAs!(tableType, Table)))
+            return getUDAs!(tableType, Table)[0]._name;
+         else
+            return tableType.stringof;
+    }
 }
 
 enum VarChar = -1;
