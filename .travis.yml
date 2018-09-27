@@ -2,9 +2,21 @@ language: d
 sudo: false
 dist: trusty
 
+install:
+    - git clone https://github.com/atilaneves/reggae.git
+    - cd reggae
+    - dub build
+    - export PATH=$PWD/bin:$PATH
+    - cd ..
+    - dub fetch d2sqlite3 && dub build d2sqlite3 --config=all-included --compiler=$DC
+    - if [ "$DC" == "ldc2" ]; then export DC=ldmd2; fi
+    - reggae -b make --dc ${DC} --dflags -cov
+    - if [ "$DC" == "ldmd2" ]; then export DC=ldc2; fi
+
 os:
     - linux
-    - osx
+      # TODO: macos shared DB libs.
+      # - osx
 
 d:
     - dmd-2.082.0
@@ -22,7 +34,7 @@ d:
     - ldc-1.6.0 # 2.076.1
 
 script:
-    - dub test -b unittest-cov --compiler=${DC}
+    - make ut && ./ut
 
 after_success:
     - bash <(curl -s https://codecov.io/bash)

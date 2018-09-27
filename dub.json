@@ -4,7 +4,7 @@
         "Ryan Frame"
     ],
     "description": "ORM inspired by SQLAlchemy.",
-    "copyright": "Copyright © 2018, Ryan Frame",
+    "copyright": "Copyright © 2018 Ryan Frame",
     "license": "MIT",
     "configurations": [
         { "name": "library" },
@@ -14,11 +14,16 @@
             "preBuildCommands": ["dub run unit-threaded -c gen_ut_main -- -f bin/ut.d"],
             "mainSourceFile": "bin/ut.d",
             "sourcePaths": ["test"],
-            "importPaths": ["source", "test"],
-            "dependencies": {
-                "unit-threaded": "~>0.7.51"
-            }
+            "importPaths": ["source", "test"]
         }
     ],
+    "dependencies": {
+        "unit-threaded": "~>0.7.51",
+        "d2sqlite3": "~>0.17.1",
+        "sumtype": "~>0.6.2"
+    },
+    "subConfigurations": {
+        "d2sqlite3": "all-included"
+    },
     "dflags": ["-dip25"]
 }

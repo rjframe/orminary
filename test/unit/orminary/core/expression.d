@@ -2,19 +2,54 @@ module unit.orminary.core.expression;
 
 import std.conv : text;
 
+import orminary.core.trace;
 import orminary.core.model;
 import orminary.core.expression;
 
+@("Construct a CREATE TABLE query object")
+unittest {
+    auto c = CreateTable("tablename",
+            // I can't do this (yet): @primaryKey col!(Integer!())("id"),
+            col!(Integer!())("id"),
+            col!(String!())("name"),
+            col!(Integer!(i => (i > 1900 && i < 2100)))("age")
+        ).primary("id");
+
+    assert(c.columns == [
+            Column("id", "Integer"),
+            Column("name", "String!(-1)"),
+            Column("age", "Integer")
+        ], c.columns.text);
+    assert(c.primaryKey == "id");
+}
+
+@("Construct a CREATE TABLE IF NOT EXISTS query object")
+unittest {
+    auto c = CreateTable("tablename",
+            col!(Integer!())("id"),
+            col!(String!())("name"),
+            col!(String!(50))("addr")
+        ).ifNotExists().primary("id");
+
+    assert(c.columns == [
+            Column("id", "Integer"),
+            Column("name", "String!(-1)"),
+            Column("addr", "String!(50)")
+        ], c.columns.text);
+    assert(c.primaryKey == "id");
+    assert(c.when == If.NotExists);
+}
+
 @("Construct a simple SELECT object")
 unittest {
-    auto s = Select("id", "name").from("mytable").where("id > 10");
+    auto s = Select("id", "name").from("mytable").where("id".gt(10));
 
     assert(s.fields == ["id", "name"]);
     assert(s.isDistinct == false);
     assert(s.tables == ["mytable"]);
-    assert(s.filter == "id > 10");
+    assert(s.filter.toString() == "id > 10");
 
-    s = Select("id", "name").distinct().from("mytable").where("id > 10");
+    s = Select("id", "name").distinct().from("mytable").where("id".gt(10));
     assert(s.isDistinct == true);
 }
 
@@ -40,6 +75,14 @@ unittest {
     assert(s.tables == ["T", "other_name"], s.tables.text);
 }
 
+@("Support where condition clauses")
+unittest {
+    @Model struct MyTable { int id; string name; }
+    auto s = Select("id", "name").from!MyTable.where("id".equals(10));
+
+    assert(s.filter.toString() == "id == 10", s.filter.toString());
+}
+
 @("Add a GROUP By clause")
 unittest {
     @Model struct T { Integer!() a; String!() b; }
@@ -52,6 +95,6 @@ unittest {
 unittest {
     @Model struct T { Integer!() a; String!() b; }
 
-    auto s = Select("a", "b").from!T.groupBy("b", "a").having("SUM(a) > 1");
-    assert(s.aggregateFilter() == "SUM(a) > 1");
+    auto s = Select("a", "b").from!T.groupBy("b", "a").having("SUM(a)".gt(1));
+    assert(s.aggregateFilter().toString() == "SUM(a) > 1");
 }

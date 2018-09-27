@@ -9,7 +9,7 @@ import orminary.core.trace;
 // TODO: Everything is Unicode; do I also want to support ASCII types?
 // I probably should.
 
-/** UDA to specify that an object is a model/model. */
+/** UDA to specify that an object is a row/model. */
 struct Model {
     private string _name = "";
 
@@ -33,6 +33,9 @@ struct Model {
             return modelType.stringof;
     }
 }
+
+private struct _NullValue {}
+enum NullValue = _NullValue();
 
 enum VarChar = -1;
 
