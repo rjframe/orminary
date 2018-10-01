@@ -30,6 +30,48 @@ struct SqLiteEngine {
         return SqlResult(db.execute(q));
     }
 
+    void query(const(CreateTable) createTable) {
+        // TODO: Validation.
+        db.execute(buildQuery(createTable));
+    }
+
+    static string buildQuery(const(CreateTable) createTable) pure {
+        import std.array : appender;
+
+        auto q = appender!string("CREATE TABLE ");
+        if (createTable.when == If.NotExists)
+            q ~= "IF NOT EXISTS ";
+
+        q ~= createTable.name;
+        q ~= " ";
+
+        /* TODO: Support multiple primary keys(?):
+            CREATE...
+                name TYPE,
+                name2 TYPE2,
+                PRIMARY KEY (name, name2)
+        */
+        if (createTable.columns.length) {
+            q ~= "(";
+            for (size_t i = 0; i < createTable.columns.length; ++i) {
+                q ~= createTable.columns[i].name;
+                q ~= " ";
+                q ~= createTable.columns[i].type.fixTypeName();
+
+                if (createTable.columns[i].name == createTable.primaryKey)
+                    q ~= " PRIMARY KEY";
+
+                if (i < createTable.columns.length - 1)
+                    q ~= ", ";
+            }
+            q ~= ")";
+        } else {
+            q ~= "AS ";
+            q ~= SqLiteEngine.buildQuery(createTable.fromQuery());
+        }
+        return q.data;
+    }
+
     static string buildQuery(const(Select) select) pure {
         import std.array : appender;
         import std.algorithm.iteration : joiner;
@@ -45,11 +87,7 @@ struct SqLiteEngine {
 
         q ~= " FROM ";
         trace("tables");
-        foreach (i, table; select.tables) {
-            q ~= table;
-            if (i < select.tables.length-1)
-                q ~= ", ";
-        }
+        q ~= select.tables.dup().joiner(", ");
 
         if (select.filter.isSet) {
             trace("filter");
@@ -94,6 +132,21 @@ struct SqLiteEngine {
 
     Database _db;
     bool isInitialized = false;
+}
+
+private:
+
+string fixTypeName(in string type) pure
+    out(ret) {
+        assert(ret.length > 0, "Implement type: " ~ type);
+    } body {
+
+    import std.algorithm.searching : startsWith, endsWith;
+    return type == "Float" ? "REAL"
+        : type == "Double" ? "REAL"
+        : type.endsWith("Integer") ? "INTEGER"
+        : type.startsWith("String") ? "TEXT"
+        : "";
 }
 
 } // version(SqLite)

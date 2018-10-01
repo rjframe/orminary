@@ -23,30 +23,58 @@ import orminary.core.trace;
 // constraints.
 struct CreateTable {
     this(string name, Column[] cols...) {
-        this.name = name;
+        this._name = name;
         this.cols = cols.dup;
     }
+
+    this(string name, Select select) {
+        this._name = name;
+        this._fromQuery = select;
+    }
+
+    this(M)(M model) {
+        import std.traits : hasUDA, Fields, FieldNameTuple;
+        import orminary.core.model : Model;
+
+        alias T = typeof(model);
+        static if (! hasUDA!(T, Model))
+            throw new Exception("TODO - incorrect object");
+        this._name ~= Model.getNameOf!model;
+
+        alias memberNames = FieldNameTuple!T;
+        static foreach (i, memberType; Fields!T) {
+            cols ~= col!memberType(memberNames[i]);
+        }
+    }
+
+    @property
+    auto name() pure const { return _name; }
 
     @property
     auto columns() pure const { return cols; }
 
     @property
+    auto fromQuery() pure const { return _fromQuery; }
+
+    @property
     auto when() pure const { return _when; }
 
+    // TODO: Support multiple primary keys(?)
     @property
     auto primaryKey() pure const { return _primaryKey; }
 
     private:
 
+    // One or the other of these will be used.
     Column[] cols;
-    string name;
+    Select _fromQuery;
+
+    string _name;
     If _when = If.Always;
     string _primaryKey;
 }
 
 const(Column) col(alias Type)(in string name) pure {
-    trace("col type: ", Type.stringof);
-
     // Remove the constraint.
     enum typeString = {
         import std.string : split;
@@ -84,7 +112,15 @@ enum If {
 }
 
 CreateTable primary(CreateTable t, in string name) pure {
-    // TODO: ensure name is in the list of tables.
+    bool found = false;
+    foreach (col; t.cols) {
+        if (col.name == name) {
+            found = true;
+            break;
+        }
+    }
+    if (! found) throw new Exception("TODO - invalid primary key");
+
     t._primaryKey = name;
     return t;
 }
@@ -146,7 +182,7 @@ Select from(T...)(Select s, const(T) tables) pure {
         static if (! hasUDA!(typeof(table), Model))
             throw new Exception("TODO - incorrect object");
 
-        s._tables ~= Model.name!table;
+        s._tables ~= Model.getNameOf!table;
     }}
     return s;
 }
@@ -159,7 +195,7 @@ Select from(T...)(Select s) pure {
         static if (! hasUDA!(table, Model))
             throw new Exception("TODO - incorrect object");
         else
-            s._tables ~= Model.name!table;
+            s._tables ~= Model.getNameOf!table;
     }}
     return s;
 }

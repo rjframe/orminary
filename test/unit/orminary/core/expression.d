@@ -40,6 +40,34 @@ unittest {
     assert(c.when == If.NotExists);
 }
 
+@("Construct a CREATE TABLE AS query object")
+unittest {
+    auto c = CreateTable("tablename",
+            Select("id", "name").from("othertable").where("id".gt(100))
+        );
+
+    with (c.fromQuery) {
+        assert(fields == ["id", "name"]);
+        assert(tables == ["othertable"]);
+        assert(filter.toString() == "id > 100");
+    }
+}
+
+@("Construct a CREATE TABLE object from a model")
+unittest {
+    @Model struct mytable {
+        Integer!() id;
+        String!() name;
+    }
+    auto c = CreateTable(mytable());
+
+    assert(c.name == "mytable");
+    assert(c.columns == [
+            Column("id", "Integer"),
+            Column("name", "String!(-1)"),
+        ], c.columns.text);
+}
+
 @("Construct a simple SELECT object")
 unittest {
     auto s = Select("id", "name").from("mytable").where("id".gt(10));

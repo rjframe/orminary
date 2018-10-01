@@ -19,11 +19,11 @@ os:
       # - osx
 
 d:
-    - dmd-2.082.0
-    - dmd-2.081.2
+    - dmd-2.082.0 # Add UDAs on function parameters.
+    - dmd-2.081.2 # Add expression-based contracts.
     - dmd-2.080.1
     - dmd-2.079.1
-    - dmd-2.078.3
+    - dmd-2.078.3 # body->do
     - dmd-2.077.1
     - dmd-2.076.1
     - ldc-1.11.0 # 2.081.2

@@ -17,7 +17,7 @@ struct Model {
     void name(string name) { _name = name; }
 
     // TODO: Sanitize/transform name.
-    static string name(alias model)() {
+    static string getNameOf(alias model)() {
         import std.traits : getUDAs, isType, isExpressionTuple;
 
         /* If the attribute is applied like "@Model struct t {}" then we end up

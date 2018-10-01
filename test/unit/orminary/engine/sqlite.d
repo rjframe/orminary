@@ -15,6 +15,31 @@ void setup() {
     sql = SqLiteEngine(":memory:");
 }
 
+@("Build a CREATE TABLE statement")
+unittest {
+    auto c = CreateTable("tablename",
+            col!(Integer!())("id"),
+            col!(String!())("name"),
+            col!(String!(50))("addr")
+        ).ifNotExists().primary("id");
+
+    auto q = sql.buildQuery(c);
+    assert(q == "CREATE TABLE IF NOT EXISTS tablename (id INTEGER PRIMARY KEY, "
+        ~ "name TEXT, addr TEXT)",
+        q);
+}
+
+@("Build a CREATE TABLE AS statement")
+unittest {
+    auto c = CreateTable("tablename",
+            Select("id", "name").from("othertable").where("id".gt(100))
+        );
+
+    auto q = sql.buildQuery(c);
+    assert(q == "CREATE TABLE tablename AS SELECT id, name FROM othertable WHERE id > 100;",
+        q);
+}
+
 @("Build a simple SELECT statement")
 unittest {
     @Model struct a { Integer!() b; }
