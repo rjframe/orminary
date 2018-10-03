@@ -56,8 +56,8 @@ unittest {
 
     auto result = SqlResult(sql.db.execute("SELECT id, name FROM tablename;"));
     assert(result.length == 1, result.length.text);
-    assert(result[0].value!int(0) == 500);
-    assert(result[0].value!string(1) == "B");
+    assert(result[0][0].valueAs!int == 500);
+    assert(result[0][1].valueAs!string == "B");
 }
 
 @("Create a table from a model")
@@ -71,8 +71,8 @@ unittest {
 
     auto result = SqlResult(sql.db.execute("SELECT id, name FROM mytable;"));
     assert(result.length == 1, result.length.text);
-    assert(result[0].value!int(0) == 50);
-    assert(result[0].value!string(1) == "A");
+    assert(result[0][0].valueAs!int == 50);
+    assert(result[0][1].valueAs!string == "A");
 }
 
 @("Simple SELECT query")
@@ -87,7 +87,8 @@ unittest {
     auto q = Select("name").from("table1").where("name".equals(`"Favorite Person"`));
     auto result = sql.query(q);
     assert(result.length == 1, result.length.text);
-    assert(result[0].value!string(0) == "Favorite Person", result[0].value!string(0));
+    assert(result[0][0].valueAs!string == "Favorite Person",
+            result[0][0].valueAs!string);
 }
 
 } // version(SqLite)

@@ -32,16 +32,23 @@ unittest {
 
     auto ormRow = OrminaryRow(row());
 
+    string print(T)(size_t idx) {
+        import std.conv : text;
+        return ormRow[idx].valueAs!T.text;
+    }
+
     import std.math : approxEqual;
-    assert(ormRow.value!string(0) == "A string.");
+    assert(ormRow[0].valueAs!string == "A string.", print!string(0));
     // TODO: JSONValue.
-    assert(ormRow.value!int(2) == 5);
-    assert(ormRow.value!short(3) == 7);
-    assert(ormRow.value!long(4) == 10);
-    assert(ormRow.value!float(5).approxEqual(5.0f));
-    assert(ormRow.value!double(6).approxEqual(10.0));
-    assert(ormRow.value!(ubyte[])(7) == cast(ubyte[])[1, 2, 3, 4]);
-    assert(ormRow.value!(typeof(NullValue))(8) == NullValue);
+    assert(ormRow[2].valueAs!int == 5, print!int(2));
+    assert(ormRow[3].valueAs!short == 7, print!short(3));
+    assert(ormRow[4].valueAs!long == 10, print!long(4));
+    assert(ormRow[5].valueAs!float().approxEqual(5.0f), print!float(5));
+    assert(ormRow[6].valueAs!double().approxEqual(10.0f), print!double(6));
+    assert(ormRow[7].valueAs!(ubyte[]) == cast(ubyte[])[1, 2, 3, 4],
+            print!(ubyte[])(7));
+    assert(ormRow[8].valueAs!(typeof(NullValue)) == NullValue,
+            print!(typeof(NullValue))(8));
 }
 
 } // version(SqLite)

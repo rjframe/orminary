@@ -1,7 +1,11 @@
 /** Contains database-agnostic query result objects. */
 module orminary.engine.sqlresult;
 
-import sumtype;
+import std.traits : isNumeric;
+
+// TODO: Can I remove the SQL DB dependencies and move this into core?
+// It would be nice for the ORM definitions to be in core, with the DB->ORM
+// marshalling handled by each engine.
 
 import orminary.core.model : NullValue;
 import orminary.core.expression : ColumnData;
@@ -57,20 +61,8 @@ struct OrminaryRow {
         }
     } // version(SqLite)
 
-    T value(T)(size_t index) if (! isNumeric!T) {
-        return cols[index].tryMatch!(
-                (T val) => val
-            );
-    }
-
-    T value(T)(size_t index) if (isNumeric!T) {
-        return cast(T) cols[index].tryMatch!(
-                (long l) => l,
-                (int i) => i,
-                (short s) => s,
-                (double d) => d,
-                (float f) => f
-            );
+    const(ColumnData) opIndex(in size_t idx) {
+        return cols[idx];
     }
 
     @property
@@ -79,4 +71,22 @@ struct OrminaryRow {
     private:
 
     ColumnData[] cols;
+}
+
+const(T) valueAs(T)(ColumnData c) if (! isNumeric!T) {
+    import sumtype : tryMatch;
+    return c.tryMatch!(
+            (T val) => val
+        );
+}
+
+const(T) valueAs(T)(ColumnData c) if (isNumeric!T) {
+    import sumtype : tryMatch;
+    return cast(T) c.tryMatch!(
+            (long l) => l,
+            (int i) => i,
+            (short s) => s,
+            (double d) => d,
+            (float f) => f
+        );
 }
