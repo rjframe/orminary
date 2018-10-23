@@ -19,13 +19,13 @@ os:
       # - osx
 
 d:
-    - dmd-2.082.0 # Add UDAs on function parameters.
-    - dmd-2.081.2 # Add expression-based contracts.
-    - dmd-2.080.1
-    - dmd-2.079.1
-    - dmd-2.078.3 # body->do
-    - dmd-2.077.1
-    - dmd-2.076.1
+    - dmd-2.082.1 # 2018 Oct 10 / Add UDAs on function parameters.
+    - dmd-2.081.2 # 2018 Aug 12 / Add expression-based contracts.
+    - dmd-2.080.1 # 2018 Jun 7
+    - dmd-2.079.1 # 2018 Apr 14
+    - dmd-2.078.3 # 2018 Feb 15 / body->do
+    - dmd-2.077.1 # 2017 Nov 29
+    - dmd-2.076.1 # 2017 Oct 9
     - ldc-1.11.0 # 2.081.2
     - ldc-1.10.0 # 2.080.1
     - ldc-1.9.0 # 2.079.1
