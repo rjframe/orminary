@@ -1,10 +1,9 @@
 /** Manages database model abstractions. */
 module orminary.core.model; @safe:
 
-// TODO: Better module/filename than model. Possibly types?
-
 import std.json : JSONValue;
 
+import orminary.core.exception;
 import orminary.core.trace;
 // TODO: Everything is Unicode; do I also want to support ASCII types?
 // I probably should.
@@ -46,11 +45,11 @@ struct String(int length = VarChar, bool function(string) constraint = null) {
     void opAssign(const(char[]) newValue) {
         static if (length != VarChar) {
             if (newValue.length > length)
-                throw new Exception("TODO - invalid value");
+                throw new InvalidData(newValue, "Given string is too long");
         }
         static if (constraint) {
             if (! constraint(val))
-                throw new Exception("TODO - invalid value");
+                throw new InvalidData(newValue, "Value fails constraint");
         }
 
         val = newValue.dup;
@@ -99,7 +98,7 @@ string GenerateOrmType(string name, string type) {
         ~ "    void opAssign(const(" ~ type ~ ") newValue) {"
         ~ "        static if (constraint !is null) {"
         ~ "            if (! constraint(newValue))"
-        ~ "                throw new Exception(`TODO - invalid value`);"
+        ~ "                throw new InvalidData(newValue, `Value fails constraint`);"
         ~ "        }"
         ~ "        val = newValue;"
         ~ "    }"
@@ -112,4 +111,80 @@ string GenerateOrmType(string name, string type) {
         ~ "        return val == other;"
         ~ "    }"
         ~ "}";
+}
+
+struct OrminaryColumn {
+    import std.conv : text;
+    import std.traits : isNumeric, isSomeString;
+    import sumtype;
+
+    this(T)(in T data) if (! isSomeString!T) {
+        this._toString = data.text; // This is ugly.
+        this.data = data;
+    }
+
+    this(T)(in T data) if (isSomeString!T) {
+        this._toString = `"` ~ data ~ `"`; // This is ugly.
+        this.data = data;
+    }
+
+    const(T) valueAs(T)() inout if (! isNumeric!T) {
+        scope(failure) throw new InvalidType!T();
+        return data.tryMatch!(
+                (const(T) val) => val
+            );
+    }
+
+    const(T) valueAs(T)() inout if (isNumeric!T) {
+        scope(failure) throw new InvalidType!T();
+        return cast(T) data.tryMatch!(
+                (long l) => l,
+                (int i) => i,
+                (short s) => s,
+                (double d) => d,
+                (float f) => f
+            );
+    }
+
+    string toString() const {
+        return _toString;
+    }
+
+    private:
+
+    auto data = SumType!(
+            string,
+            JSONValue,
+            int,
+            short,
+            long,
+            float,
+            double,
+            ubyte[],
+            typeof(NullValue)
+        )();
+
+    string _toString;
+}
+
+struct OrminaryRow {
+    const(OrminaryColumn) opIndex(in size_t idx) {
+        return cols[idx];
+    }
+
+    ref typeof(this) opOpAssign(string op)(in OrminaryColumn value)
+            if (op == "~") {
+
+        cols ~= value;
+        return this;
+    }
+
+    size_t opDollar() { return cols.length; }
+
+    @property
+    size_t length() { return cols.length; }
+
+    private:
+
+    OrminaryColumn[] cols;
 }

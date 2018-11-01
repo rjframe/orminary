@@ -24,15 +24,15 @@ struct SqLiteEngine {
         isInitialized = true;
     }
 
-    SqlResult query(const(Select) select) {
+    void query(Q)(const(Q) q) if (is(Q == CreateTable) || is(Q == Insert)
+            || is(Q == Replace)) {
         // TODO: Validation.
-        auto q = buildQuery(select);
-        return SqlResult(db.execute(q));
+        db.execute(buildQuery(q));
     }
 
-    void query(const(CreateTable) createTable) {
+    SqlResult query(Q)(const(Q) q) if (is(Q == Select)) {
         // TODO: Validation.
-        db.execute(buildQuery(createTable));
+        return SqlResult(db.execute(buildQuery(q)));
     }
 
     static string buildQuery(const(CreateTable) createTable) pure {
@@ -111,8 +111,41 @@ struct SqLiteEngine {
         return q.data;
     }
 
-    SqlResult query(R)(const(Insert) insert) {
-        assert(0);
+    static string buildQuery(INS)(const(INS) insert)
+            if (is(INS == Insert) || is(INS == Replace)) {
+        import std.array : appender;
+        import std.algorithm.iteration : joiner;
+
+        static if (is(INS == Insert))
+            enum ins = "INSERT INTO ";
+        else
+            enum ins = "REPLACE INTO ";
+        auto q = appender!string(ins);
+
+        q ~= insert.table;
+
+        if (insert.hasNamedColumns) {
+            auto rows = insert.rows();
+            q ~= " (";
+            q ~= rows.joiner(", ");
+            q ~= ") VALUES (";
+
+            foreach (i, row; rows) {
+                q ~= insert[row].toString();
+                if (i < rows.length - 1)
+                    q ~= ", ";
+            }
+            q ~= ");";
+        } else {
+            q ~= " VALUES (";
+            for (size_t i = 0; i < insert.length; ++i) {
+                q ~= insert[i].toString();
+                if (i < insert.length-1)
+                    q ~= ", ";
+            }
+            q ~= ");";
+        }
+        return q.data;
     }
 
     /** Provides access to the underlying d2sqlite3 Database object.
@@ -122,10 +155,12 @@ struct SqLiteEngine {
     */
     deprecated("db() is provided in pre-release to ensure you can do what you need to do. Please file a feature request.")
     @property Database db() {
+        import orminary.core.exception : NoDatabaseConnection;
         if (isInitialized)
             return _db;
         else
-            throw new Exception("TODO - must connect to DB first");
+            throw new NoDatabaseConnection(
+                    "The ORM engine is not connected to a database.");
     }
 
     private:

@@ -13,16 +13,15 @@ module orminary.core.expression; @safe:
 
 import std.json : JSONValue;
 
-import sumtype;
-
 import orminary.core.model : NullValue;
+import orminary.core.exception;
 import orminary.core.trace;
 
-// TODO: constraints are not placed on the table; at least not yet.
+// TODO: constraints are not placed on the table.
 // I need to allow declaring CreateTable constraints differently than model
 // constraints.
 struct CreateTable {
-    this(string name, Column[] cols...) {
+    this(in string name, in CreateTableColumn[] cols...) {
         this._name = name;
         this.cols = cols.dup;
     }
@@ -66,7 +65,7 @@ struct CreateTable {
     private:
 
     // One or the other of these will be used.
-    Column[] cols;
+    CreateTableColumn[] cols;
     Select _fromQuery;
 
     string _name;
@@ -74,7 +73,7 @@ struct CreateTable {
     string _primaryKey;
 }
 
-const(Column) col(alias Type)(in string name) pure {
+const(CreateTableColumn) col(alias Type)(in string name) pure {
     // Remove the constraint.
     enum typeString = {
         import std.string : split;
@@ -85,25 +84,13 @@ const(Column) col(alias Type)(in string name) pure {
         } else return ident[0];
     }();
 
-    return Column(name, typeString);
+    return CreateTableColumn(name, typeString);
 }
 
-struct Column {
+struct CreateTableColumn {
     string name;
     string type;
 }
-
-alias ColumnData = SumType!(
-        string,
-        JSONValue,
-        int,
-        short,
-        long,
-        float,
-        double,
-        ubyte[],
-        typeof(NullValue)
-    );
 
 /** Used to specify when to create a table. */
 enum If {
@@ -226,7 +213,118 @@ Select having(Select s, in Filter aggregateFilter) pure {
     return s;
 }
 
-struct Insert {}
+template InsertAndReplaceConstructors() {
+    import std.typecons : Tuple;
+    import orminary.core.model : OrminaryColumn;
+
+    // The into() function validates these.
+    this(T...)(in T values) {
+        foreach (val; values) {
+            columnArray ~= OrminaryColumn(val);
+        }
+    }
+
+    // The into() function validates these.
+    this(in Tuple!(string, OrminaryColumn)[] values...) {
+        foreach (val; values) {
+            columnMap[val[0]] = val[1];
+        }
+    }
+}
+
+struct Insert {
+    mixin InsertAndReplaceConstructors;
+
+    @property
+    string table() pure const { return _table; }
+
+    const(OrminaryColumn) opIndex(in size_t idx) const {
+        if (idx < columnArray.length)
+            return columnArray[idx];
+        else
+            throw new RangeViolation(idx, columnArray.length);
+    }
+
+    const(OrminaryColumn) opIndex(in string key) const {
+        if (key in columnMap)
+            return columnMap[key];
+        else
+            throw new ColumnDoesNotExist("Cannot find column", key);
+    }
+
+    size_t opDollar() pure const { return length; }
+
+    @property
+    size_t length() pure const {
+        return hasNamedColumns ? columnMap.length : columnArray.length;
+    }
+
+    @property
+    bool hasNamedColumns() pure const { return columnMap.length > 0; }
+
+    @property
+    string[] rows() pure const {
+        import std.array : array;
+        return columnMap.byKey().array;
+    }
+
+    private:
+
+    // One or the other will be in use, depending on the constructor.
+    OrminaryColumn[string] columnMap; // Name, value.
+    OrminaryColumn[] columnArray;     // Just values.
+
+    string _table;
+}
+
+auto value(alias name, T)(in T val) pure {
+    import std.typecons : tuple;
+    import orminary.core.model : OrminaryColumn;
+    return tuple(name, OrminaryColumn(val));
+}
+
+struct Replace {
+    mixin InsertAndReplaceConstructors;
+
+    Insert insert;
+    alias insert this;
+}
+
+INS into(T, INS)(INS i) if (is(INS == Insert) || is(INS == Replace)) {
+    import std.traits : hasUDA, FieldNameTuple;
+    import orminary.core.model : Model;
+    import orminary.core.exception;
+
+    static if (! hasUDA!(T, Model))
+        throw new InvalidType!(T, Model);
+    else
+        i._table ~= Model.getNameOf!T;
+
+    // We cannot actually validate fields in the Insert constructor, because we
+    // don't know what table we're inserting into at the time. So we do it here.
+    enum fields = FieldNameTuple!T;
+    if (i.hasNamedColumns) {
+        foreach (col; i.columnMap.byKey()) {
+            bool found = false;
+            foreach (field; fields) {
+                if (col == field) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+                throw new ColumnDoesNotExist(
+                        "The specified column name is invalid", col);
+        }
+    } else {
+        // TODO: Check data types.
+        if (i.columnArray.length != fields.length)
+            throw new MissingData("You must insert into all fields",
+                    fields.length);
+    }
+
+    return i;
+}
 
 
 private:

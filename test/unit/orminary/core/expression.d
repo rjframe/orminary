@@ -1,6 +1,7 @@
 module unit.orminary.core.expression;
 
 import std.conv : text;
+import std.exception;
 
 import orminary.core.trace;
 import orminary.core.model;
@@ -16,9 +17,9 @@ unittest {
         ).primary("id");
 
     assert(c.columns == [
-            Column("id", "Integer"),
-            Column("name", "String!(-1)"),
-            Column("age", "Integer")
+            CreateTableColumn("id", "Integer"),
+            CreateTableColumn("name", "String!(-1)"),
+            CreateTableColumn("age", "Integer")
         ], c.columns.text);
     assert(c.primaryKey == "id");
 }
@@ -32,9 +33,9 @@ unittest {
         ).ifNotExists().primary("id");
 
     assert(c.columns == [
-            Column("id", "Integer"),
-            Column("name", "String!(-1)"),
-            Column("addr", "String!(50)")
+            CreateTableColumn("id", "Integer"),
+            CreateTableColumn("name", "String!(-1)"),
+            CreateTableColumn("addr", "String!(50)")
         ], c.columns.text);
     assert(c.primaryKey == "id");
     assert(c.when == If.NotExists);
@@ -63,8 +64,8 @@ unittest {
 
     assert(c.name == "mytable");
     assert(c.columns == [
-            Column("id", "Integer"),
-            Column("name", "String!(-1)"),
+            CreateTableColumn("id", "Integer"),
+            CreateTableColumn("name", "String!(-1)"),
         ], c.columns.text);
 }
 
@@ -125,4 +126,52 @@ unittest {
 
     auto s = Select("a", "b").from!T.groupBy("b", "a").having("SUM(a)".gt(1));
     assert(s.aggregateFilter().toString() == "SUM(a) > 1");
+}
+
+@("Construct a simple INSERT object")
+unittest {
+    @Model struct mytable { Integer!() id; String!() name; }
+
+    auto i = Insert(5, "Person Name").into!mytable;
+
+    assert(i.table == "mytable");
+    assert(i[0] == OrminaryColumn(5), i[0].toString());
+    assert(i[1] == OrminaryColumn("Person Name"), i[1].toString());
+}
+
+@("Construct an INSERT object with named columns")
+unittest {
+    @Model struct mytable { Integer!() id; String!() name; String!10 phone; }
+
+    auto i = Insert(
+            value!"id"(5),
+            value!"name"("Person Name")
+        ).into!mytable;
+
+    assert(i.table == "mytable");
+    assert(i["id"] == OrminaryColumn(5), i["id"].toString());
+    assert(i["name"] == OrminaryColumn("Person Name"), i["name"].toString());
+}
+
+@("Cannot INSERT a nonexistent name")
+unittest {
+    import orminary.core.exception : ColumnDoesNotExist;
+    @Model struct mytable { Integer!() id; String!() name; String!10 phone; }
+    assertThrown!ColumnDoesNotExist(
+        Insert(
+                value!"id"(5),
+                value!"noname"("Person Name")
+        ).into!mytable
+    );
+}
+
+@("INSERT without column names must include all columns")
+@("Construct a simple INSERT object")
+unittest {
+    import orminary.core.exception : MissingData;
+    @Model struct mytable { Integer!() id; String!() name; String!10 phone; }
+
+    assertThrown!MissingData(
+        Insert(5, "Person Name").into!mytable
+    );
 }

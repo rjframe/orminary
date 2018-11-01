@@ -91,4 +91,41 @@ unittest {
             result[0][0].valueAs!string);
 }
 
+@("Insert a row into a table")
+unittest {
+    @Model("table1") struct Table {
+        Integer!() id;
+        String!() name;
+    }
+
+    sql.query(Insert(1, "My Name").into!Table);
+    auto res = sql.query(Select("id", "name").from("table1"));
+
+    assert(res.length == 1);
+    assert(res[0][0].valueAs!int == 1);
+    assert(res[0][1].valueAs!string == "My Name");
+
+    sql.query(Insert(value!"id"(2), value!"name"("Other Person")).into!Table);
+
+    res = sql.query(Select("id", "name").from("table1"));
+    assert(res.length == 2);
+    assert(res[1][0].valueAs!int == 2);
+    assert(res[1][1].valueAs!string == "Other Person");
+}
+
+@("Replace a row in the table")
+unittest {
+    @Model("table1") struct Table {
+        Integer!() id;
+        String!() name;
+    }
+    sql.query(Insert(1, "My Name").into!Table);
+    sql.query(Replace(value!"id"(1), value!"name"("Other Person")).into!Table);
+
+    auto res = sql.query(Select("id", "name").from("table1"));
+    assert(res.length == 1);
+    assert(res[0][0].valueAs!int == 1);
+    assert(res[0][1].valueAs!string == "Other Person");
+}
+
 } // version(SqLite)

@@ -67,4 +67,16 @@ unittest {
             sql.buildQuery(s));
 }
 
+@("Build an INSERT statement")
+unittest {
+    @Model("table1") struct Table {
+        Integer!() id;
+        String!() name;
+    }
+
+    auto i = Insert(1, "My Name").into!Table;
+    assert(sql.buildQuery(i) == `INSERT INTO table1 VALUES (1, "My Name");`,
+            sql.buildQuery(i));
+}
+
 } // version(SqLite)

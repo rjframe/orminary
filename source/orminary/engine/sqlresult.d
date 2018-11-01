@@ -7,21 +7,26 @@ import std.traits : isNumeric;
 // It would be nice for the ORM definitions to be in core, with the DB->ORM
 // marshalling handled by each engine.
 
-import orminary.core.model : NullValue;
-import orminary.core.expression : ColumnData;
+import orminary.core.model;
 import orminary.core.trace;
+
+import d2sqlite3.results : ColumnData, ResultRange;
 
 struct SqlResult {
     version(SqLite) {
-        import d2sqlite3.results : ResultRange;
         this(ResultRange queryResult) {
-            foreach (row; queryResult)
-                rows ~= OrminaryRow(row);
+            foreach (row; queryResult) {
+                OrminaryRow ormRow;
+                foreach (col; row) {
+                    ormRow ~= convert(col);
+                }
+                rows ~= ormRow;
+            }
         }
     }
 
     @property
-    size_t length() { return rows.length; }
+    size_t length() const { return rows.length; }
 
     OrminaryRow opIndex(size_t index) {
         return rows[index];
@@ -32,61 +37,21 @@ struct SqlResult {
     OrminaryRow[] rows;
 }
 
-struct OrminaryRow {
-    import std.traits : isNumeric;
+private:
 
-    version(SqLite) {
-        import d2sqlite3.database : SqliteType;
-        import d2sqlite3.results : SqLiteRow = Row;
-        this(ROW = SqLiteRow)(ROW r) {
-            foreach (col; r) {
-                final switch (col.type) {
-                    case SqliteType.INTEGER:
-                        cols ~= ColumnData(col.as!long);
-                        break;
-                    case SqliteType.FLOAT:
-                        cols ~= ColumnData(col.as!double);
-                        break;
-                    case SqliteType.TEXT:
-                        cols ~= ColumnData(col.as!string);
-                        break;
-                    case SqliteType.BLOB:
-                        cols ~= ColumnData(col.as!(ubyte[]));
-                        break;
-                    case SqliteType.NULL:
-                        cols ~= ColumnData(NullValue);
-                        break;
-                }
-            }
-        }
-    } // version(SqLite)
+auto convert(ColumnData col) {
+    import d2sqlite3.database : SqliteType;
 
-    const(ColumnData) opIndex(in size_t idx) {
-        return cols[idx];
+    final switch (col.type) {
+        case SqliteType.INTEGER:
+            return OrminaryColumn(col.as!long);
+        case SqliteType.FLOAT:
+            return OrminaryColumn(col.as!double);
+        case SqliteType.TEXT:
+            return OrminaryColumn(col.as!string);
+        case SqliteType.BLOB:
+            return OrminaryColumn(col.as!(ubyte[]));
+        case SqliteType.NULL:
+            return OrminaryColumn(NullValue);
     }
-
-    @property
-    size_t length() { return cols.length; }
-
-    private:
-
-    ColumnData[] cols;
-}
-
-const(T) valueAs(T)(ColumnData c) if (! isNumeric!T) {
-    import sumtype : tryMatch;
-    return c.tryMatch!(
-            (T val) => val
-        );
-}
-
-const(T) valueAs(T)(ColumnData c) if (isNumeric!T) {
-    import sumtype : tryMatch;
-    return cast(T) c.tryMatch!(
-            (long l) => l,
-            (int i) => i,
-            (short s) => s,
-            (double d) => d,
-            (float f) => f
-        );
 }
