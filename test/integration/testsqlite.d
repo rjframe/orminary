@@ -143,4 +143,18 @@ unittest {
     assert(res[0][1].valueAs!string == "My Name");
 }
 
+@("Delete all rows from the table")
+unittest {
+    @Model("table1") struct Table {
+        Integer!() id;
+        String!() name;
+    }
+    sql.query(Insert(1, "My Name").into!Table);
+    sql.query(Insert(2, "Your Name").into!Table);
+    sql.query(Delete().from("table1"));
+
+    auto res = sql.query(Select("id", "name").from("table1"));
+    assert(res.length == 0);
+}
+
 } // version(SqLite)

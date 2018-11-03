@@ -58,6 +58,15 @@ unittest {
             sql.buildQuery(s));
 }
 
+@("Build a DELETE statement without a WHERE clause")
+unittest {
+    @Model struct a { Integer!() b; }
+    auto s = Delete().from!a;
+
+    assert(sql.buildQuery(s) == "DELETE FROM a;",
+            sql.buildQuery(s));
+}
+
 @("SELECT with GROUP BY")
 unittest {
     @Model struct T { Integer!() a; String!() b; }
