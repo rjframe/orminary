@@ -49,6 +49,15 @@ unittest {
             sql.buildQuery(s));
 }
 
+@("Build a simple DELETE statement")
+unittest {
+    @Model struct a { Integer!() b; }
+    auto s = Delete().from!a.where("b".gt(10));
+
+    assert(sql.buildQuery(s) == "DELETE FROM a WHERE b > 10;",
+            sql.buildQuery(s));
+}
+
 @("SELECT with GROUP BY")
 unittest {
     @Model struct T { Integer!() a; String!() b; }

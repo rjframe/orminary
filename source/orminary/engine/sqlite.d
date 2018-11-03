@@ -25,7 +25,7 @@ struct SqLiteEngine {
     }
 
     void query(Q)(const(Q) q) if (is(Q == CreateTable) || is(Q == Insert)
-            || is(Q == Replace)) {
+            || is(Q == Replace) || is(Q == Delete)) {
         // TODO: Validation.
         db.execute(buildQuery(q));
     }
@@ -108,6 +108,25 @@ struct SqLiteEngine {
         }
 
         q ~= ";";
+        return q.data;
+    }
+
+    static string buildQuery(const(Delete) del) {
+        import std.array : appender;
+        import std.algorithm.iteration : joiner;
+
+        auto q = appender!string("DELETE FROM ");
+
+        trace("tables");
+        q ~= del.tables.dup().joiner(", ");
+
+        if (del.filter.isSet) {
+            trace("filter");
+            q ~= " WHERE ";
+            q ~= del.filter.toString();
+        }
+        q ~= ";";
+
         return q.data;
     }
 

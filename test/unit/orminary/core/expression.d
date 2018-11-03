@@ -175,3 +175,35 @@ unittest {
         Insert(5, "Person Name").into!mytable
     );
 }
+
+@("Construct a simple DELETE object")
+unittest {
+    auto d = Delete().from("mytable").where("id".gt(10));
+
+    assert(d.tables == ["mytable"]);
+    assert(d.filter.toString() == "id > 10");
+}
+
+@("Pass table types to a DELETE query")
+unittest {
+    @Model struct T { Integer!() a; }
+    @Model struct U { Integer!() a; }
+
+    auto d = Delete().from!(T, U).where("id".gt(10));
+
+    assert(d.tables == ["T", "U"]);
+    assert(d.filter.toString() == "id > 10");
+}
+
+@("Pass table objects to a DELETE query")
+unittest {
+    @Model struct T { Integer!() a; }
+    @Model struct U { Integer!() a; }
+    auto t = T();
+    auto u = U();
+
+    auto d = Delete().from(t, u).where("id".gt(10));
+
+    assert(d.tables == ["T", "U"]);
+    assert(d.filter.toString() == "id > 10");
+}

@@ -128,4 +128,19 @@ unittest {
     assert(res[0][1].valueAs!string == "Other Person");
 }
 
+@("Delete a row from the table")
+unittest {
+    @Model("table1") struct Table {
+        Integer!() id;
+        String!() name;
+    }
+    sql.query(Insert(1, "My Name").into!Table);
+    sql.query(Insert(2, "Your Name").into!Table);
+    sql.query(Delete().from("table1").where("id".gt(1)));
+
+    auto res = sql.query(Select("id", "name").from("table1"));
+    assert(res.length == 1);
+    assert(res[0][1].valueAs!string == "My Name");
+}
+
 } // version(SqLite)

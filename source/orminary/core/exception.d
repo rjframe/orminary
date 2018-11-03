@@ -6,6 +6,15 @@ class NoDatabaseConnection : Exception {
     }
 }
 
+class NotAModelObject : Exception {
+    this(T)(T obj, string file = __FILE__, size_t line = __LINE__) {
+        type = obj.stringof;
+        super("Object is not a Model type: " ~ obj.stringof);
+    }
+
+    string type;
+}
+
 // TODO: I don't like the templated exception.
 private enum NoExpectedTypeSpecified;
 class InvalidType(Given, Expected = NoExpectedTypeSpecified) : Exception {

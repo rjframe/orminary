@@ -11,9 +11,10 @@
 */
 module orminary.core.expression; @safe:
 
+import std.traits : hasMember;
 import std.json : JSONValue;
 
-import orminary.core.model : NullValue;
+import orminary.core.model : Model, NullValue;
 import orminary.core.exception;
 import orminary.core.trace;
 
@@ -151,45 +152,66 @@ struct Select {
     bool _distinct = false;
 }
 
+struct Delete {
+
+    @property
+    const(string[]) tables() pure const { return _tables; }
+
+    @property
+    const(Filter) filter() pure const { return _filter; }
+
+    private:
+
+    string[] _tables;
+    Filter _filter;
+}
+
 Select distinct(Select s) pure {
     s._distinct = true;
     return s;
 }
 
-Select from(Select s, const(string[]) tables...) pure {
-    s._tables = tables.dup;
-    return s;
+Q from(Q)(Q q, const(string[]) tables...) if (hasMember!(Q, "_tables")) {
+    q._tables = tables.dup;
+    return q;
 }
 
-Select from(T...)(Select s, const(T) tables) pure {
+Q from(Q, T...)(Q q, const(T) tables) if (hasMember!(Q, "_tables")) {
     import std.traits : hasUDA;
-    import orminary.core.model : Model;
 
     static foreach (table; tables) {{
         static if (! hasUDA!(typeof(table), Model))
-            throw new Exception("TODO - incorrect object");
+            throw new NotAModelObject(typeof(table));
 
-        s._tables ~= Model.getNameOf!table;
+        q._tables ~= Model.getNameOf!table;
     }}
-    return s;
+    return q;
 }
 
-Select from(T...)(Select s) pure {
+Select from(T...)(Select q) {
+    return from!(Select, T)(q);
+}
+
+Delete from(T...)(Delete q) {
+    return from!(Delete, T)(q);
+}
+
+private Q from(Q, T...)(Q q) if (hasMember!(Q, "_tables")) {
     import std.traits : hasUDA;
     import orminary.core.model : Model;
 
     static foreach(table; T) {{
         static if (! hasUDA!(table, Model))
-            throw new Exception("TODO - incorrect object");
+            throw new NotAModelObject(typeof(table));
         else
-            s._tables ~= Model.getNameOf!table;
+            q._tables ~= Model.getNameOf!table;
     }}
-    return s;
+    return q;
 }
 
-Select where(Select s, in Filter filter) pure {
-    s._filter = filter;
-    return s;
+Q where(Q)(Q q, in Filter filter) if (hasMember!(Q, "_filter")) {
+    q._filter = filter;
+    return q;
 }
 
 mixin(generateConditional("equals", "equalTo"));
@@ -325,7 +347,6 @@ INS into(T, INS)(INS i) if (is(INS == Insert) || is(INS == Replace)) {
 
     return i;
 }
-
 
 private:
 
