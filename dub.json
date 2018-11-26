@@ -20,7 +20,7 @@
     "dependencies": {
         "unit-threaded": "~>0.7.51",
         "d2sqlite3": "~>0.17.1",
-        "sumtype": "~>0.6.2"
+        "sumtype": "0.6.3"
     },
     "subConfigurations": {
         "d2sqlite3": "all-included"
