@@ -77,32 +77,25 @@ struct SqLiteEngine {
         import std.algorithm.iteration : joiner;
 
         auto q = appender!string("SELECT ");
-
         if (select.isDistinct) {
             q ~= " DISTINCT ";
         }
 
-        trace("fields");
         q ~= select.fields.dup().joiner(", ");
-
         q ~= " FROM ";
-        trace("tables");
         q ~= select.tables.dup().joiner(", ");
 
         if (select.filter.isSet) {
-            trace("filter");
             q ~= " WHERE ";
             q ~= select.filter.toString();
         }
 
         if (select.groups) {
-            trace("groups");
             q ~= " GROUP BY ";
             q ~= select.groups.dup().joiner(", ");
         }
 
         if (select.aggregateFilter.isSet) {
-            trace("having");
             q ~= " HAVING ";
             q ~= select.aggregateFilter.toString();
         }
@@ -116,12 +109,9 @@ struct SqLiteEngine {
         import std.algorithm.iteration : joiner;
 
         auto q = appender!string("DELETE FROM ");
-
-        trace("tables");
         q ~= del.tables.dup().joiner(", ");
 
         if (del.filter.isSet) {
-            trace("filter");
             q ~= " WHERE ";
             q ~= del.filter.toString();
         }
