@@ -166,7 +166,6 @@ unittest {
 }
 
 @("INSERT without column names must include all columns")
-@("Construct a simple INSERT object")
 unittest {
     import orminary.core.exception : MissingData;
     @Model struct mytable { Integer!() id; String!() name; String!10 phone; }
